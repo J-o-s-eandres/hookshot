@@ -5,12 +5,13 @@ import { ApiError, asyncHandler } from "./errors.js";
 import { hashPin, isValidPinFormat, verifyPin } from "../auth/pin.js";
 import { signWebhookToken } from "../auth/jwt.js";
 import { requireWebhookAuth } from "../auth/middleware.js";
-import { toPublicWebhook, toSafeWebhook } from "./serializers.js";
+import { toPublicWebhook, toSafeWebhook, toSessionWebhook } from "./serializers.js";
 import { config } from "../config.js";
 
 const createSchema = z.object({
   name: z.string().trim().max(80).optional(),
   pin: z.string().refine(isValidPinFormat, "El PIN debe tener 4 a 8 dígitos.").optional(),
+  sessionId: z.string().min(1).optional(),
 });
 
 const unlockSchema = z.object({
@@ -31,10 +32,17 @@ export function webhooksRouter(deps: AppDeps): Router {
   router.post(
     "/",
     asyncHandler(async (req, res) => {
-      const { name, pin } = createSchema.parse(req.body);
+      const { name, pin, sessionId } = createSchema.parse(req.body);
 
       if (!pin && !config.demoMode) {
         throw new ApiError(400, "PIN requerido. 4 a 8 dígitos.");
+      }
+
+      if (sessionId) {
+        const count = await deps.webhooks.countBySession(sessionId);
+        if (count >= config.maxWebhooksPerSession) {
+          throw new ApiError(429, `Límite de ${config.maxWebhooksPerSession} webhooks por sesión alcanzado.`);
+        }
       }
 
       const pinHash = pin ? await hashPin(pin) : "";
@@ -43,13 +51,23 @@ export function webhooksRouter(deps: AppDeps): Router {
           ? new Date(Date.now() + config.demoTtlMinutes * 60_000).toISOString()
           : undefined;
 
-      const webhook = await deps.webhooks.create({ name: name ?? null, pinHash, expiresAt });
+      const webhook = await deps.webhooks.create({ name: name ?? null, pinHash, expiresAt, sessionId });
 
       const jwt = signWebhookToken({
         webhookId: webhook.id,
         token: webhook.token,
       });
       res.status(201).json({ token: jwt, webhook: toSafeWebhook(webhook) });
+    }),
+  );
+
+  router.get(
+    "/session/:sessionId",
+    asyncHandler(async (req, res) => {
+      const { sessionId } = req.params;
+      if (!sessionId) throw new ApiError(400, "sessionId requerido.");
+      const webhooks = await deps.webhooks.listBySession(sessionId);
+      res.json({ webhooks: webhooks.map(toSessionWebhook) });
     }),
   );
 

@@ -1,8 +1,3 @@
-/**
- * Tipos compartidos con el backend (espejo del contrato de la API).
- * Mantener sincronizados con `server/src/...`.
- */
-
 export interface ResponseConfig {
   status: number;
   contentType: string;
@@ -10,22 +5,31 @@ export interface ResponseConfig {
   body: string;
 }
 
-/** Webhook tal como lo devuelve la API al dueño autenticado. */
 export interface SafeWebhook {
   token: string;
   name: string | null;
   createdAt: string;
+  expiresAt: string | null;
+  sessionId: string | null;
   response: ResponseConfig;
 }
 
-/** Metadatos públicos de un webhook. */
 export interface PublicWebhook {
   token: string;
   name: string | null;
   createdAt: string;
+  expiresAt: string | null;
 }
 
-/** Petición capturada. */
+export interface SessionWebhook {
+  id: string;
+  token: string;
+  name: string | null;
+  createdAt: string;
+  expiresAt: string | null;
+  hasPin: boolean;
+}
+
 export interface CapturedRequest {
   id: string;
   webhookId: string;

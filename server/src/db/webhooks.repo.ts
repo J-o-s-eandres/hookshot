@@ -17,6 +17,7 @@ export interface Webhook {
   response: ResponseConfig;
   createdAt: string;
   expiresAt: string | null;
+  sessionId: string | null;
 }
 
 interface WebhookRow {
@@ -30,6 +31,7 @@ interface WebhookRow {
   resp_body: string | null;
   created_at: string;
   expires_at: string | null;
+  session_id: string | null;
 }
 
 function rowToWebhook(row: WebhookRow): Webhook {
@@ -49,6 +51,7 @@ function rowToWebhook(row: WebhookRow): Webhook {
         ? row.created_at
         : new Date(row.created_at).toISOString(),
     expiresAt: row.expires_at ?? null,
+    sessionId: row.session_id ?? null,
   };
 }
 
@@ -56,6 +59,7 @@ export interface CreateWebhookInput {
   name?: string | null;
   pinHash: string;
   expiresAt?: string;
+  sessionId?: string;
 }
 
 export class WebhooksRepo {
@@ -73,6 +77,7 @@ export class WebhooksRepo {
       resp_body: JSON.stringify({ ok: true, message: "Captured by HookShot" }),
       created_at: new Date().toISOString(),
       expires_at: input.expiresAt ?? null,
+      session_id: input.sessionId ?? null,
     };
     await this.knex("webhooks").insert(row);
     return rowToWebhook(row);
@@ -135,5 +140,19 @@ export class WebhooksRepo {
     await this.knex("webhooks")
       .where({ token })
       .update({ pin_hash: pinHash });
+  }
+
+  async listBySession(sessionId: string): Promise<Webhook[]> {
+    const rows = await this.knex<WebhookRow>("webhooks")
+      .where({ session_id: sessionId })
+      .orderBy("created_at", "desc");
+    return rows.map(rowToWebhook);
+  }
+
+  async countBySession(sessionId: string): Promise<number> {
+    const result = await this.knex("webhooks")
+      .where({ session_id: sessionId })
+      .count<{ count: string }[]>("* as count");
+    return Number(result[0]?.count ?? 0);
   }
 }

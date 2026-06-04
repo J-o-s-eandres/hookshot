@@ -22,6 +22,8 @@ const EnvSchema = z.object({
 
   MAX_BODY_BYTES: z.coerce.number().int().positive().default(1_048_576),
 
+  MAX_WEBHOOKS_PER_SESSION: z.coerce.number().int().positive().default(10),
+
   WEB_DIST: z.string().optional(),
 
   DEMO_MODE: z
@@ -38,6 +40,7 @@ export type AppConfig = Env & {
   isTest: boolean;
   demoMode: boolean;
   demoTtlMinutes: number;
+  maxWebhooksPerSession: number;
 };
 
 function loadConfig(): AppConfig {
@@ -68,6 +71,7 @@ function loadConfig(): AppConfig {
     isTest: env.NODE_ENV === "test",
     demoMode: env.DEMO_MODE,
     demoTtlMinutes: env.DEMO_TTL_MINUTES,
+    maxWebhooksPerSession: env.MAX_WEBHOOKS_PER_SESSION,
   };
 }
 

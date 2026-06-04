@@ -6,7 +6,7 @@ import { CopyButton } from "../../components/CopyButton";
 import { BoltIcon, CheckIcon, LockIcon } from "../../components/Icons";
 import { useToast } from "../../components/Toast";
 import { api, ApiError } from "../../lib/client";
-import { setStoredToken } from "../../lib/store";
+import { setStoredToken, getSessionId } from "../../lib/store";
 import type { SafeWebhook } from "../../types";
 
 /** URL pública de ingesta de un webhook. */
@@ -18,12 +18,14 @@ export function CreatePage() {
   const navigate = useNavigate();
   const toast = useToast();
   const isDemo = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+  const sessionId = getSessionId();
 
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState<SafeWebhook | null>(null);
   const [sendingPing, setSendingPing] = useState(false);
+  const [sessionWebhooksCount, setSessionWebhooksCount] = useState(0);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,9 +38,11 @@ export function CreatePage() {
       const { token: jwt, webhook } = await api.createWebhook({
         name: name.trim() || undefined,
         pin,
+        sessionId: isDemo ? sessionId : undefined,
       });
       setStoredToken(webhook.token, jwt);
       setCreated(webhook);
+      setSessionWebhooksCount((c) => c + 1);
       toast.show("Webhook creado. Ya tienes sesión iniciada.", "success");
     } catch (err) {
       toast.show(err instanceof ApiError ? err.message : "Error al crear.", "error");
@@ -213,6 +217,15 @@ export function CreatePage() {
                   >
                     Abrir inspector
                   </Button>
+                  {isDemo && (
+                    <Button
+                      variant="secondary"
+                      className="flex-1"
+                      onClick={() => navigate("/dashboard")}
+                    >
+                      Ver mis webhooks
+                    </Button>
+                  )}
                   <Button
                     variant="secondary"
                     className="flex-1"
@@ -225,6 +238,12 @@ export function CreatePage() {
                     Crear otro
                   </Button>
                 </div>
+
+                {isDemo && sessionWebhooksCount > 0 && (
+                  <div className="rounded-xl bg-slate-900/50 border border-white/10 px-4 py-3 text-sm text-slate-300">
+                    Tienes <span className="font-semibold text-brand-300">{sessionWebhooksCount}</span> de <span className="font-semibold">10</span> webhooks en esta sesión.
+                  </div>
+                )}
               </div>
             </div>
           )}

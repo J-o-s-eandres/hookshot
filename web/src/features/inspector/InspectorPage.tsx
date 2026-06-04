@@ -42,6 +42,8 @@ export function InspectorPage() {
   const [liveIds, setLiveIds] = useState<Set<string>>(new Set());
   const [liveCount, setLiveCount] = useState(0);
   const [badgePulse, setBadgePulse] = useState(false);
+  const [renamingMode, setRenamingMode] = useState(false);
+  const [renameInput, setRenameInput] = useState("");
 
   const ingestUrl = `${window.location.origin}/h/${token}`;
 
@@ -169,16 +171,22 @@ export function InspectorPage() {
 
   const handleRename = useCallback(async () => {
     if (!jwt || !webhook) return;
-    const name = window.prompt("Nombre del webhook:", webhook.name ?? "");
-    if (name === null) return;
-    try {
-      const { webhook: updated } = await api.renameWebhook(token, jwt, name);
-      setWebhook(updated);
-      toast.show("Nombre actualizado.", "success");
-    } catch {
-      toast.show("No se pudo actualizar el nombre.", "error");
+    if (renamingMode) {
+      // Guardando el nombre
+      try {
+        const { webhook: updated } = await api.renameWebhook(token, jwt, renameInput);
+        setWebhook(updated);
+        setRenamingMode(false);
+        toast.show("Nombre actualizado.", "success");
+      } catch {
+        toast.show("No se pudo actualizar el nombre.", "error");
+      }
+    } else {
+      // Entrando en modo edición
+      setRenameInput(webhook.name ?? "");
+      setRenamingMode(true);
     }
-  }, [jwt, webhook, token, toast]);
+  }, [jwt, webhook, token, toast, renamingMode, renameInput]);
 
   const handleDeleteWebhook = useCallback(async () => {
     if (!jwt) return;
@@ -288,9 +296,26 @@ export function InspectorPage() {
         {/* Barra de la URL + acciones */}
         <div className="panel px-4 py-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="min-w-0 flex-1">
-            <button onClick={handleRename} className="block text-[11px] uppercase tracking-wide text-slate-500 hover:text-slate-300 focusable rounded" title="Cambiar nombre">
-              {webhook?.name || "URL de ingesta"}
-            </button>
+            {renamingMode ? (
+              <input
+                autoFocus
+                type="text"
+                value={renameInput}
+                onChange={(e) => setRenameInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename();
+                  if (e.key === "Escape") setRenamingMode(false);
+                }}
+                onBlur={handleRename}
+                placeholder="Nombre del webhook"
+                maxLength={80}
+                className="w-full bg-ink-850 border border-brand-500/50 rounded-lg px-2.5 py-1 text-sm text-slate-100 focusable"
+              />
+            ) : (
+              <button onClick={handleRename} className="block text-[11px] uppercase tracking-wide text-slate-500 hover:text-slate-300 focusable rounded" title="Cambiar nombre">
+                {webhook?.name || "URL de ingesta"}
+              </button>
+            )}
             <div className="flex items-center gap-2">
               <code className="code text-brand-200 truncate">{ingestUrl}</code>
               <CopyButton value={ingestUrl} />
@@ -310,6 +335,16 @@ export function InspectorPage() {
               >
                 <TrashIcon width={16} height={16} />
                 <span className="hidden sm:inline">Vaciar</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/dashboard")}
+                className="text-slate-500 hover:text-slate-300"
+                title="Volver al dashboard"
+              >
+                <ArrowLeftIcon width={16} height={16} />
+                <span className="hidden sm:inline">Atrás</span>
               </Button>
               <Button
                 variant="ghost"

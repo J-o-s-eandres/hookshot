@@ -1,6 +1,7 @@
 import type { Knex } from "knex";
 import * as init from "./migrations/0001_init.js";
 import * as demo from "./migrations/0005_demo.js";
+import * as session from "./migrations/0006_session.js";
 
 interface Migration {
   name: string;
@@ -8,7 +9,7 @@ interface Migration {
   down: (knex: Knex) => Promise<void>;
 }
 
-const migrations: Migration[] = [init, demo];
+const migrations: Migration[] = [init, demo, session];
 
 const migrationSource: Knex.MigrationSource<Migration> = {
   async getMigrations() {

@@ -1,16 +1,9 @@
-/**
- * Cliente HTTP de la API.
- *
- * Envuelve `fetch` para:
- *  - inyectar `Authorization: Bearer <jwt>` cuando se pasa un token,
- *  - parsear JSON y lanzar un `ApiError` legible en respuestas no-2xx,
- *  - notificar al consumidor cuando un 401 invalida la sesión.
- */
 import type {
   CapturedRequest,
   PublicWebhook,
   ResponseConfig,
   SafeWebhook,
+  SessionWebhook,
 } from "../types";
 
 export class ApiError extends Error {
@@ -41,7 +34,6 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
 
-  // 204 sin cuerpo.
   const text = await res.text();
   const data = text ? (JSON.parse(text) as unknown) : null;
 
@@ -53,9 +45,8 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   return data as T;
 }
 
-/** API tipada de HookShot. */
 export const api = {
-  createWebhook(input: { name?: string; pin: string }) {
+  createWebhook(input: { name?: string; pin?: string; sessionId?: string }) {
     return request<{ token: string; webhook: SafeWebhook }>("/webhooks", {
       method: "POST",
       body: input,
@@ -123,4 +114,7 @@ export const api = {
     });
   },
 
+  listSessionWebhooks(sessionId: string) {
+    return request<{ webhooks: SessionWebhook[] }>(`/webhooks/session/${sessionId}`);
+  },
 };
