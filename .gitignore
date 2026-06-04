@@ -1,0 +1,44 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+web/dist/
+server/dist/
+
+# Datos locales (SQLite)
+data/
+*.sqlite
+*.sqlite-journal
+
+# Temporales de e2e
+e2e/.tmp/
+web-e2e/.tmp/
+web-e2e/test-results/
+web-e2e/playwright-report/
+
+# Entorno
+.env
+.env.local
+.env.*.local
+
+# Logs y SO
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Harness / herramientas locales
+.claude/
+
+# Análisis de negocio y documentación interna (confidencial)
+negocio.txt
+docs/estrategia.md
+docs/superpowers/
+CLAUDE.md
+_private/

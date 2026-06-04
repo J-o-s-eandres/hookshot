@@ -1,0 +1,31 @@
+{
+  "name": "hookshot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HookShot — inspector de webhooks en tiempo real (clon con esteroides de webhook.site)",
+  "license": "MIT",
+  "workspaces": [
+    "server",
+    "web",
+    "cli",
+    "e2e",
+    "web-e2e"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,magenta \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "npm -w server run dev",
+    "dev:web": "npm -w web run dev",
+    "build": "npm -w web run build && npm -w server run build",
+    "start": "npm -w server run start",
+    "migrate": "npm -w server run migrate",
+    "test": "npm -w server run test",
+    "test:e2e": "npm run build && npm -w cli run build && npm -w e2e test",
+    "test:ui": "npm run build && npm -w web-e2e test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
