@@ -121,7 +121,7 @@ export class WebhooksRepo {
   async findExpired(): Promise<Webhook[]> {
     const rows = await this.knex<WebhookRow>("webhooks")
       .where("expires_at", "<=", new Date().toISOString())
-      .andWhereNotNull("expires_at");
+      .whereNotNull("expires_at");
     return rows.map(rowToWebhook);
   }
 
