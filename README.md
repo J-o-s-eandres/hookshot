@@ -9,6 +9,28 @@ Configure the response sent back to the sender, protect the history with a
 ![stack](https://img.shields.io/badge/Node-20-green) ![stack](https://img.shields.io/badge/React-18-blue) ![db](https://img.shields.io/badge/SQLite%E2%86%92PostgreSQL-knex-orange)
 [![GitHub](https://img.shields.io/badge/GitHub-J--o--s--eandres/hookshot-181717?logo=github)](https://github.com/J-o-s-eandres/hookshot)
 [![npm](https://img.shields.io/badge/npm-@hookshot_cli/cli-CB3837?logo=npm)](https://www.npmjs.com/package/@hookshot_cli/cli)
+[![Railway](https://img.shields.io/badge/Demo-Railway-0B0D0E?logo=railway)](https://hookshot-production-ee63.up.railway.app)
+
+## 🚀 Try the Demo
+
+**Live instance running on Railway:** [hookshot-production-ee63.up.railway.app](https://hookshot-production-ee63.up.railway.app)
+
+Create a webhook instantly — no PIN required in demo mode. Webhooks expire automatically after 60 minutes.
+
+```bash
+# Create a demo webhook
+curl -X POST https://hookshot-production-ee63.up.railway.app/api/webhooks \
+  -H "Content-Type: application/json" \
+  -d '{"name":"test"}'
+
+# Get the token from the response, then send a request
+curl -X POST https://hookshot-production-ee63.up.railway.app/h/<token> \
+  -H "Content-Type: application/json" \
+  -d '{"hello":"world"}'
+```
+
+> **Landing page:** [`docs/index.html`](./docs/index.html) — hosted on GitHub Pages.
+> **CLI on npm:** [`@hookshot_cli/cli`](https://www.npmjs.com/package/@hookshot_cli/cli).
 
 ## Features
 
@@ -191,6 +213,8 @@ All documented in [`.env.example`](./.env.example):
 | `JWT_EXPIRES` | `24h` | JWT expiration |
 | `RETENTION_DAYS` | `7` | Request retention in days |
 | `MAX_BODY_BYTES` | `1048576` | Max captured body size (1 MB) |
+| `DEMO_MODE` | `false` | Allow webhook creation without PIN (`true` \| `false`) |
+| `DEMO_TTL_MINUTES` | `60` | Minutes before a demo webhook auto-expires |
 
 ---
 
@@ -208,6 +232,45 @@ All documented in [`.env.example`](./.env.example):
 | `DELETE` | `/api/webhooks/:token/requests` | JWT | Clear history |
 | `GET` | `/api/webhooks/:token/stream?token=<jwt>` | JWT | SSE live stream |
 | `ANY` | `/h/:token/*` | — | **Ingestion** (capture + custom response) |
+
+---
+
+---
+
+## Branch strategy & deployment
+
+This repository maintains two lines of development:
+
+| Branch | Contents |
+|--------|----------|
+| [`master`](https://github.com/J-o-s-eandres/hookshot/tree/master) | Full codebase including premium features (health monitoring, alerts, chaos testing, replay, destinations). |
+| [`free-tier`](https://github.com/J-o-s-eandres/hookshot/tree/free-tier) | Public demo — only webhook creation, live capture, SSE streaming, custom responses, PIN + JWT auth, and demo mode (optional PIN, auto-expiring webhooks). **No premium code.** |
+
+### ⚠️ Important: avoid deploying premium code
+
+If you deploy the `master` branch, all premium routes are registered and
+accessible. If you only want the free-tier features:
+
+1. **Always deploy from the `free-tier` branch**, never from `master`.
+2. Verify your deployment only has these routes:
+   `POST /api/webhooks`, `GET /api/webhooks/:token`,
+   `POST /api/webhooks/:token/unlock`, `POST /api/webhooks/:token/protect`,
+   `PATCH /api/webhooks/:token/response`, `GET /api/webhooks/:token/requests`,
+   `ANY /h/:token/*`, `GET /api/webhooks/:token/stream`.
+3. Premium routes (`/health`, `/chaos`, `/alerts`, `/destinations`, `/replay`)
+   should return **404** on a free-tier deployment.
+
+### Why this happened
+
+During development, the `master` branch accumulated premium code while the
+`free-tier` branch stayed clean. An accidental deploy from `master` exposed
+premium routes to production. The fix was:
+
+1. Create a new orphan `free-tier` branch with a single commit.
+2. Strip all premium files and references (`config.ts`, `.env.example`, tests).
+3. Add demo mode (optional PIN, auto-expiration).
+4. Force-push to replace history on GitHub.
+5. Redeploy.
 
 ---
 

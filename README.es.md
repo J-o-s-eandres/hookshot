@@ -9,6 +9,28 @@ Configura la respuesta que devuelve al emisor, protege el historial con un
 ![stack](https://img.shields.io/badge/Node-20-green) ![stack](https://img.shields.io/badge/React-18-blue) ![db](https://img.shields.io/badge/SQLite%E2%86%92PostgreSQL-knex-orange)
 [![GitHub](https://img.shields.io/badge/GitHub-J--o--s--eandres/hookshot-181717?logo=github)](https://github.com/J-o-s-eandres/hookshot)
 [![npm](https://img.shields.io/badge/npm-@hookshot_cli/cli-CB3837?logo=npm)](https://www.npmjs.com/package/@hookshot_cli/cli)
+[![Railway](https://img.shields.io/badge/Demo-Railway-0B0D0E?logo=railway)](https://hookshot-production-ee63.up.railway.app)
+
+## 🚀 Probar la Demo
+
+**Instancia en vivo en Railway:** [hookshot-production-ee63.up.railway.app](https://hookshot-production-ee63.up.railway.app)
+
+Crea un webhook al instante — sin PIN en modo demo. Los webhooks expiran automáticamente después de 60 minutos.
+
+```bash
+# Crear un webhook demo
+curl -X POST https://hookshot-production-ee63.up.railway.app/api/webhooks \
+  -H "Content-Type: application/json" \
+  -d '{"name":"test"}'
+
+# Obtén el token de la respuesta y envía una petición
+curl -X POST https://hookshot-production-ee63.up.railway.app/h/<token> \
+  -H "Content-Type: application/json" \
+  -d '{"hello":"world"}'
+```
+
+> **Landing page:** [`docs/index.html`](./docs/index.html) — alojada en GitHub Pages.
+> **CLI en npm:** [`@hookshot_cli/cli`](https://www.npmjs.com/package/@hookshot_cli/cli).
 
 ## Características
 
@@ -191,6 +213,8 @@ Todas se documentan en [`.env.example`](./.env.example):
 | `JWT_EXPIRES` | `24h` | Expiración del JWT |
 | `RETENTION_DAYS` | `7` | Días de retención de peticiones |
 | `MAX_BODY_BYTES` | `1048576` | Tamaño máximo del body capturado (1 MB) |
+| `DEMO_MODE` | `false` | Permitir crear webhooks sin PIN (`true` \| `false`) |
+| `DEMO_TTL_MINUTES` | `60` | Minutos antes de que un webhook demo expire automáticamente |
 
 ---
 
@@ -208,6 +232,45 @@ Todas se documentan en [`.env.example`](./.env.example):
 | `DELETE` | `/api/webhooks/:token/requests` | JWT | Vaciar historial |
 | `GET` | `/api/webhooks/:token/stream?token=<jwt>` | JWT | Stream SSE en vivo |
 | `ANY` | `/h/:token/*` | — | **Ingesta** (captura + respuesta personalizada) |
+
+---
+
+---
+
+## Estrategia de ramas & despliegue
+
+Este repositorio mantiene dos líneas de desarrollo:
+
+| Rama | Contenido |
+|------|-----------|
+| [`master`](https://github.com/J-o-s-eandres/hookshot/tree/master) | Código completo incluyendo funciones premium (health, alerts, chaos, replay, destinations). |
+| [`free-tier`](https://github.com/J-o-s-eandres/hookshot/tree/free-tier) | Demo pública — solo creación de webhooks, captura en vivo, SSE, respuestas personalizadas, PIN + JWT y modo demo (PIN opcional, expiración automática). **Sin código premium.** |
+
+### ⚠️ Importante: evitar desplegar código premium
+
+Si despliegas la rama `master`, todas las rutas premium están registradas y
+accesibles. Si solo quieres las funciones free-tier:
+
+1. **Despliega siempre desde la rama `free-tier`**, nunca desde `master`.
+2. Verifica que tu despliegue solo tenga estas rutas:
+   `POST /api/webhooks`, `GET /api/webhooks/:token`,
+   `POST /api/webhooks/:token/unlock`, `POST /api/webhooks/:token/protect`,
+   `PATCH /api/webhooks/:token/response`, `GET /api/webhooks/:token/requests`,
+   `ANY /h/:token/*`, `GET /api/webhooks/:token/stream`.
+3. Las rutas premium (`/health`, `/chaos`, `/alerts`, `/destinations`, `/replay`)
+   deben devolver **404** en un despliegue free-tier.
+
+### Por qué ocurrió
+
+Durante el desarrollo, la rama `master` acumuló código premium mientras la rama
+`free-tier` se mantenía limpia. Un despliegue accidental desde `master` expuso
+rutas premium en producción. La solución fue:
+
+1. Crear una nueva rama huérfana `free-tier` con un solo commit.
+2. Eliminar todos los archivos y referencias premium (`config.ts`, `.env.example`, tests).
+3. Añadir modo demo (PIN opcional, expiración automática).
+4. Force-push para reemplazar el historial en GitHub.
+5. Redeployar.
 
 ---
 

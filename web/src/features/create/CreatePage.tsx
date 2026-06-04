@@ -17,6 +17,7 @@ function ingestUrl(token: string): string {
 export function CreatePage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const isDemo = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
 
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
@@ -70,6 +71,16 @@ export function CreatePage() {
           <span className="inline-flex items-center gap-2 text-xs font-medium text-brand-300 bg-brand-500/10 ring-1 ring-inset ring-brand-500/30 rounded-full px-3 py-1">
             <BoltIcon width={14} height={14} /> Tiempo real · SSE · PIN + JWT
           </span>
+          {isDemo && (
+            <a
+              href="https://github.com/J-o-s-eandres/hookshot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-brand-300 transition-colors"
+            >
+              🚀 Demo gratuita · Código abierto en GitHub
+            </a>
+          )}
           <h1 className="mt-6 text-4xl sm:text-5xl font-bold tracking-tight text-white">
             Inspecciona webhooks <span className="text-brand-400">al instante</span>
           </h1>
