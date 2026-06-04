@@ -128,7 +128,7 @@ export function DashboardPage() {
             <p className="text-sm text-slate-400 mb-6">
               Crea tu primer webhook para empezar a capturar peticiones HTTP.
             </p>
-            <Button onClick={createNew} size="lg">
+            <Button onClick={createNew} size="md">
               Crear mi primer webhook
             </Button>
           </div>
@@ -182,8 +182,6 @@ export function DashboardPage() {
                       </code>
                       <CopyButton
                         value={`${window.location.origin}/h/${webhook.token}`}
-                        size="sm"
-                        title="Copiar URL"
                       />
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
